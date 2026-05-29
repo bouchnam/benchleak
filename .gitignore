@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# benchleak
+# JetBrains IDE config
+.idea/
+# Model weights and HuggingFace caches
+*.safetensors
+*.bin
+.cache/huggingface/
+# Reference papers (kept local, not committed)
+papers/
+# Generated contamination reports
+reports/
+*.DS_Store
