@@ -1,0 +1,41 @@
+# Bundled reference set for benchleak.
+#
+# Every line below is an original passage written for this project and never
+# published elsewhere, so no released model can have trained on these exact
+# strings. That makes them sound "non-member" text to compare a benchmark
+# against. Blank lines and lines beginning with '#' are ignored.
+#
+# CAVEAT: these are general-domain prose. For the cleanest signal, supply your
+# own reference data that matches the benchmark's domain and length with
+# --reference (e.g. recent math word problems when scanning GSM8K).
+
+The harbour kept its own time, indifferent to the clocks in the town above it, and the boats came and went on a rhythm that only the older fishermen still claimed to understand.
+A thin rain had been falling since before dawn, fine enough that it seemed less to fall than to hang in the air and wait for anyone careless enough to walk through it.
+She counted the stairs out of habit, the way she had as a child, and was mildly disappointed to find there were still exactly nineteen of them.
+The library smelled of paper that had given up trying to stay white, and of the particular dust that only accumulates where no one is in a hurry.
+Every morning the baker argued with the radio, answering its questions out loud, and every morning the radio carried on regardless of his opinions.
+The map was wrong in a hundred small ways, but it was wrong consistently, and after a week of walking he had learned to trust its lies more than his own memory.
+There was a single lamp left burning at the end of the platform, and beneath it a man read a newspaper he had clearly finished hours ago.
+The cat regarded the closed door with the patience of something that has decided the door is a temporary condition and not a permanent fact.
+He had inherited the watch, the debt, and a strong dislike of being asked questions before breakfast, and he wore all three with equal resignation.
+The valley flooded once a generation, and the people who lived there built their houses accordingly, with the good rooms upstairs and the forgivable ones below.
+By the third interview she had stopped explaining herself and started simply describing what had happened, which everyone found far more convincing.
+The orchard had been planted by someone who would never eat its fruit, and that, the old woman said, was the only honest reason to plant anything.
+A loose shutter knocked against the wall all night, keeping a rhythm that was almost music and therefore far more annoying than ordinary noise.
+The engineer distrusted any bridge that looked beautiful before it was finished, on the theory that beauty was usually the first thing to be over-budgeted.
+They had agreed to meet at the fountain, forgetting that the town had three fountains and that each of them was certain the others knew which one was meant.
+The letter arrived years late, forwarded through four addresses, and by the time it was read its urgent request had quietly answered itself.
+In winter the lake froze from the edges inward, and the children measured the season's progress by how far out they dared to slide.
+The shopkeeper weighed everything twice, once for the customer and once for himself, and the two numbers were almost never the same.
+She wrote her appointments on her hand because she trusted ink more than memory and her skin more than any paper she might lose.
+The road forked without warning at the top of the hill, and the signpost, helpfully, pointed both ways toward the same town.
+The choir was half a beat behind the organ for the entire service, and somehow the gap felt less like a mistake than a deliberate, mournful style.
+He repaired clocks for a living and so had developed a complicated relationship with the idea of being on time for anything himself.
+The garden had escaped its borders some years ago and now belonged more to the birds and the brambles than to anyone holding a deed.
+A storm was coming in off the sea, and the gulls knew it first, wheeling inland in a loose grey argument against the sky.
+The boy traded his bicycle for a telescope and spent the rest of the summer regretting it every afternoon and forgiving it every clear night.
+The committee met for three hours to decide the colour of a door and adjourned without deciding, which everyone privately considered a success.
+The well had been dry for a decade, but the village still lowered the bucket on feast days, out of courtesy to the water that used to be there.
+She learned the language from menus and arguments, which left her fluent in food and grievance and helpless at everything in between.
+The lighthouse keeper kept a journal of nothing happening, page after page of calm seas, and considered each empty entry a small private victory.
+The tailor measured the man twice, frowned, and said only that the suit would fit the person he intended to become, not the one currently standing there.

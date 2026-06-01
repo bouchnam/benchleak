@@ -9,7 +9,7 @@ description = "Detect benchmark contamination in large language models"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-authors = [{ name = "benchleak contributors" }]
+authors = [{ name = "Mouad Bouchnaf" }]
 keywords = ["llm", "benchmark", "contamination", "memorization", "evaluation"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -34,8 +34,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/benchleak/benchleak"
-Repository = "https://github.com/benchleak/benchleak"
+Homepage = "https://github.com/bouchnam/benchleak"
+Repository = "https://github.com/bouchnam/benchleak"
 
 [project.scripts]
 benchleak = "benchleak.cli:main"

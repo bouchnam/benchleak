@@ -1,9 +1,9 @@
 """Orchestration for a reference-based contamination scan.
 
 A single Min-K% score is meaningless in isolation: its scale depends on the
-model, tokenizer and text length. We make it interpretable by scoring a second,
-*reference* set of texts known to post-date the model's training, then asking how
-strongly the benchmark's scores separate from the reference's.
+model, tokenizer and text length. It becomes interpretable by scoring a second,
+*reference* set of texts known to post-date the model's training, then measuring
+how strongly the benchmark's scores separate from the reference's.
 
 That separation is the AUC of a membership classifier built from the scores,
 which the Mann-Whitney U statistic yields directly (AUC = U / n_suspect /
@@ -62,7 +62,7 @@ def compare_distributions(
     """Test whether ``suspect`` scores stochastically exceed ``reference`` scores.
 
     Returns ``(auc, p_value)`` where ``auc`` is the probability that a randomly
-    drawn suspect score is higher than a randomly drawn reference score — 0.5 under
+    drawn suspect score is higher than a randomly drawn reference score: 0.5 under
     the null, approaching 1.0 as the benchmark looks more memorised.
     """
     if not suspect or not reference:
