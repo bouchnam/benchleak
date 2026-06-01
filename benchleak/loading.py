@@ -9,7 +9,10 @@ without downloading anything.
 
 from __future__ import annotations
 
+import csv
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable, Sequence
 
 
@@ -114,6 +117,54 @@ def _import_load_dataset():
             ) from exc
         raise
     return load_dataset
+
+
+LOCAL_BENCHMARK_SUFFIXES = (".txt", ".jsonl", ".json", ".csv")
+
+
+def is_local_benchmark(benchmark: str) -> bool:
+    """True when ``benchmark`` names an existing local file rather than a Hub id."""
+    return Path(benchmark).is_file()
+
+
+def load_local_benchmark(
+    path: str | Path, *, fields: Sequence[str] | None = None, limit: int | None = None
+) -> list[str]:
+    """Read a benchmark from a local file, returning one text per example.
+
+    Supported formats: ``.txt`` (one passage per line, no fields needed),
+    ``.jsonl`` and ``.json`` (objects, ``fields`` names the text columns), and
+    ``.csv`` (header row, ``fields`` names the columns). This path uses only the
+    standard library, so it needs neither ``datasets`` nor a network connection.
+    """
+    p = Path(path)
+    suffix = p.suffix.lower()
+
+    if suffix == ".txt":
+        texts = [line.strip() for line in p.read_text(encoding="utf-8").splitlines() if line.strip()]
+    elif suffix in (".jsonl", ".json", ".csv"):
+        if suffix == ".jsonl":
+            records = [json.loads(line) for line in p.read_text(encoding="utf-8").splitlines() if line.strip()]
+        elif suffix == ".json":
+            data = json.loads(p.read_text(encoding="utf-8"))
+            if not isinstance(data, list):
+                raise ValueError(f"{path}: expected a JSON array of objects")
+            records = data
+        else:  # .csv
+            with p.open(encoding="utf-8", newline="") as handle:
+                records = list(csv.DictReader(handle))
+        if not fields:
+            raise ValueError(
+                f"{path}: --field is required to name the text column(s) for {suffix} files"
+            )
+        texts = extract_texts(records, fields)
+    else:
+        supported = ", ".join(LOCAL_BENCHMARK_SUFFIXES)
+        raise ValueError(f"unsupported benchmark file type {suffix!r}; use one of: {supported}")
+
+    if not texts:
+        raise ValueError(f"no benchmark texts found in {path}")
+    return texts[:limit] if limit is not None else texts
 
 
 def load_benchmark(spec: BenchmarkSpec, *, limit: int | None = None) -> list[str]:

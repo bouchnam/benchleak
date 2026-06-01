@@ -70,6 +70,20 @@ any other Hub dataset, pass the path plus its text column(s):
 benchleak --model my/model --benchmark some/dataset --field question --field answer
 ```
 
+### Your own benchmark from a local file
+
+Point `--benchmark` at a local file instead of a Hub id. Supported formats:
+
+- `.txt`: one passage per line (no `--field` needed)
+- `.jsonl` / `.json` / `.csv`: name the text column(s) with `--field`
+
+```bash
+benchleak --model my/model --benchmark ./my_benchmark.jsonl --field question --field answer
+```
+
+Local files are read with the standard library, so this path needs neither a
+network connection nor the `datasets` package.
+
 ## How it works
 
 The benchmark is scored against a **reference set** of text the model is not

@@ -17,7 +17,7 @@ from . import __version__
 from .core import scan
 from .data import load_reference
 from .detectors.pretrain import DEFAULT_K, MinKProbDetector
-from .loading import load_benchmark, load_model, resolve_spec
+from .loading import is_local_benchmark, load_benchmark, load_local_benchmark, load_model, resolve_spec
 from .report import format_report
 
 
@@ -27,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Detect pre-training benchmark contamination in an LLM (Min-K% Prob).",
     )
     parser.add_argument("--model", required=True, help="HuggingFace model id, e.g. Qwen/Qwen2.5-0.5B")
-    parser.add_argument("--benchmark", required=True, help="benchmark name (gsm8k, math, ...) or a Hub dataset path")
+    parser.add_argument("--benchmark", required=True, help="benchmark name (gsm8k, math, ...), a Hub dataset path, or a local file (.txt/.jsonl/.json/.csv)")
     parser.add_argument("--reference", help="path to a reference-text file (one passage per line); defaults to the bundled set")
     parser.add_argument("--field", action="append", dest="fields", help="benchmark text column(s); repeatable. Required for an unknown benchmark")
     parser.add_argument("--config", help="dataset config/subset name")
@@ -47,13 +47,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace) -> int:
-    spec = resolve_spec(args.benchmark, config=args.config, split=args.split, fields=args.fields)
+    local = is_local_benchmark(args.benchmark)
+    spec = None if local else resolve_spec(
+        args.benchmark, config=args.config, split=args.split, fields=args.fields
+    )
 
     print(f"Loading model {args.model} ...", file=sys.stderr)
     model, tokenizer = load_model(args.model, device=args.device, dtype=args.dtype, token=args.hf_token)
 
-    print(f"Loading benchmark {spec.path} ({spec.split}) ...", file=sys.stderr)
-    benchmark_texts = load_benchmark(spec, limit=args.limit)
+    if local:
+        print(f"Loading local benchmark {args.benchmark} ...", file=sys.stderr)
+        benchmark_texts = load_local_benchmark(args.benchmark, fields=args.fields, limit=args.limit)
+    else:
+        print(f"Loading benchmark {spec.path} ({spec.split}) ...", file=sys.stderr)
+        benchmark_texts = load_benchmark(spec, limit=args.limit)
     reference_texts = load_reference(args.reference, limit=args.limit)
 
     detector = MinKProbDetector(model, tokenizer, k=args.k, max_length=args.max_length)
