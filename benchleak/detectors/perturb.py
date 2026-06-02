@@ -111,7 +111,8 @@ class T5MaskFillPerturber:
                 return []
             start += len(f"<extra_id_{i}>")
             end = generated.find(f"<extra_id_{i + 1}>")
-            fills.append(generated[start:end if end >= 0 else None].strip())
+            fill = generated[start:end if end >= 0 else None]
+            fills.append(fill.replace("</s>", "").replace("<pad>", "").strip())
         return fills
 
     def _apply(self, masked: str, fills: list[str]) -> str:
