@@ -9,9 +9,10 @@ No LLM judges, no API calls, runs locally on any HuggingFace causal LM.
 
 ## Status
 
-🚧 **Early alpha.** The **pre-training** detector (Min-K% Prob) is implemented and
-runnable end to end. The SFT and RL-post-training detectors are planned but **not
-yet built**, so don't expect them yet.
+🚧 **Early alpha.** Two detectors are implemented and runnable end to end: the
+**pre-training** detector (Min-K% Prob) and the **fine-tuning** detector
+(probabilistic variation, SPV-MIA). The RL-post-training detector is planned but
+**not yet built**.
 
 ## Install
 
@@ -84,6 +85,23 @@ benchleak --model my/model --benchmark ./my_benchmark.jsonl --field question --f
 Local files are read with the standard library, so this path needs neither a
 network connection nor the `datasets` package.
 
+### Choosing a detector
+
+`--detector pretrain` (the default) runs Min-K% Prob, which targets memorisation
+from **pre-training**. `--detector sft` runs probabilistic variation (SPV-MIA),
+which targets memorisation from **fine-tuning** and is the right choice when you
+suspect a model was fine-tuned on a benchmark:
+
+```bash
+benchleak --model my/model --benchmark gsm8k --detector sft
+```
+
+The fine-tuning detector paraphrases each sample and compares log-likelihoods, so
+it is roughly an order of magnitude slower than the pre-training detector. By
+default it downloads a T5 paraphrasing model; pass `--perturber word` to avoid the
+download (lower quality) and `--n-perturbations` to trade speed for stability. See
+[docs/how-it-works-sft.md](docs/how-it-works-sft.md) for the method and caveats.
+
 ## How it works
 
 The benchmark is scored against a **reference set** of text the model is not
@@ -104,7 +122,7 @@ where the method can mislead), see [docs/how-it-works.md](docs/how-it-works.md).
 | Phase | Method | Status |
 |-------|--------|--------|
 | Pre-training | Min-K% probability (Shi et al. 2024) | ✅ implemented |
-| SFT | Self-prompt calibration (Fu et al. 2024) | ⏳ planned |
+| SFT | Probabilistic variation / SPV-MIA (Fu et al. 2024) | ✅ implemented |
 | RL post-training | Self-Critique entropy (Tao et al. 2025) | ⏳ planned |
 
 ## Caveats

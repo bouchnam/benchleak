@@ -3,8 +3,8 @@
     benchleak --model Qwen/Qwen2.5-0.5B --benchmark gsm8k
 
 Loads a HuggingFace model and a benchmark, scores both the benchmark and a
-reference set with the Min-K% pre-training detector, and prints a contamination
-report. Exits non-zero when the benchmark is flagged as likely contaminated.
+reference set with the chosen detector, and prints a contamination report. Exits
+non-zero when the benchmark is flagged as likely contaminated.
 """
 
 from __future__ import annotations
@@ -16,24 +16,28 @@ import sys
 from . import __version__
 from .core import scan
 from .data import load_reference
+from .detectors.perturb import T5MaskFillPerturber, WordSwapPerturber
 from .detectors.pretrain import DEFAULT_K, MinKProbDetector
+from .detectors.sft import DEFAULT_N_PERTURBATIONS, ProbVariationDetector
 from .loading import is_local_benchmark, load_benchmark, load_local_benchmark, load_model, resolve_spec
 from .report import format_report
+
+DETECTOR_NAMES = {"pretrain": "min-k% prob", "sft": "prob-variation (spv-mia)"}
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="benchleak",
-        description="Detect pre-training benchmark contamination in an LLM (Min-K% Prob).",
+        description="Detect benchmark contamination in an LLM (pre-training or fine-tuning phase).",
     )
     parser.add_argument("--model", required=True, help="HuggingFace model id, e.g. Qwen/Qwen2.5-0.5B")
     parser.add_argument("--benchmark", required=True, help="benchmark name (gsm8k, math, ...), a Hub dataset path, or a local file (.txt/.jsonl/.json/.csv)")
+    parser.add_argument("--detector", choices=("pretrain", "sft"), default="pretrain", help="which phase to test: pretrain (Min-K%% Prob) or sft (probabilistic variation). Default: pretrain")
     parser.add_argument("--reference", help="path to a reference-text file (one passage per line); defaults to the bundled set")
     parser.add_argument("--field", action="append", dest="fields", help="benchmark text column(s); repeatable. Required for an unknown benchmark")
     parser.add_argument("--config", help="dataset config/subset name")
     parser.add_argument("--split", help="dataset split (default depends on the benchmark)")
     parser.add_argument("--limit", type=int, default=200, help="max samples per side (default: 200)")
-    parser.add_argument("--k", type=float, default=DEFAULT_K, help=f"Min-K%% percentage (default: {DEFAULT_K})")
     parser.add_argument("--max-length", type=int, default=2048, help="truncate texts to this many tokens (default: 2048)")
     parser.add_argument("--device", help="device to place the model on, e.g. cuda or mps")
     parser.add_argument("--dtype", default="auto", help="model dtype passed to transformers (default: auto)")
@@ -42,8 +46,31 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("HF_TOKEN"),
         help="HuggingFace token for private/gated models; defaults to the HF_TOKEN env var or a cached huggingface-cli login",
     )
+
+    pretrain = parser.add_argument_group("pretrain detector")
+    pretrain.add_argument("--k", type=float, default=DEFAULT_K, help=f"Min-K%% percentage (default: {DEFAULT_K})")
+
+    sft = parser.add_argument_group("sft detector")
+    sft.add_argument("--perturber", choices=("t5", "word"), default="t5", help="paraphraser for probabilistic variation: t5 (downloads a T5 model, higher quality) or word (no extra model). Default: t5")
+    sft.add_argument("--perturber-model", default="t5-base", help="T5 model id for the t5 perturber (default: t5-base)")
+    sft.add_argument("--n-perturbations", type=int, default=DEFAULT_N_PERTURBATIONS, help=f"paraphrases per sample for the sft detector (default: {DEFAULT_N_PERTURBATIONS})")
+
     parser.add_argument("--version", action="version", version=f"benchleak {__version__}")
     return parser
+
+
+def build_detector(args: argparse.Namespace, model, tokenizer):
+    """Construct the detector selected by ``--detector``."""
+    if args.detector == "pretrain":
+        return MinKProbDetector(model, tokenizer, k=args.k, max_length=args.max_length)
+
+    if args.perturber == "t5":
+        perturber = T5MaskFillPerturber(model_name=args.perturber_model, device=args.device)
+    else:
+        perturber = WordSwapPerturber()
+    return ProbVariationDetector(
+        model, tokenizer, perturber, n_perturbations=args.n_perturbations, max_length=args.max_length
+    )
 
 
 def run(args: argparse.Namespace) -> int:
@@ -63,13 +90,13 @@ def run(args: argparse.Namespace) -> int:
         benchmark_texts = load_benchmark(spec, limit=args.limit)
     reference_texts = load_reference(args.reference, limit=args.limit)
 
-    detector = MinKProbDetector(model, tokenizer, k=args.k, max_length=args.max_length)
+    detector = build_detector(args, model, tokenizer)
     print(f"Scoring {len(benchmark_texts)} benchmark + {len(reference_texts)} reference samples ...", file=sys.stderr)
     result = scan(
         detector,
         benchmark_texts,
         reference_texts,
-        detector_name="min-k% prob",
+        detector_name=DETECTOR_NAMES[args.detector],
         benchmark_name=args.benchmark,
     )
 
