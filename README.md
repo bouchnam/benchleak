@@ -9,10 +9,10 @@ No LLM judges, no API calls, runs locally on any HuggingFace causal LM.
 
 ## Status
 
-🚧 **Early alpha.** Two detectors are implemented and runnable end to end: the
-**pre-training** detector (Min-K% Prob) and the **fine-tuning** detector
-(probabilistic variation, SPV-MIA). The RL-post-training detector is planned but
-**not yet built**.
+🚧 **Early alpha.** All three detectors are implemented and runnable end to end:
+the **pre-training** detector (Min-K% Prob), the **fine-tuning** detector
+(probabilistic variation, SPV-MIA), and the **RL-post-training** detector
+(Self-Critique entropy).
 
 ## Install
 
@@ -102,6 +102,21 @@ default it downloads a T5 paraphrasing model; pass `--perturber word` to avoid t
 download (lower quality) and `--n-perturbations` to trade speed for stability. See
 [docs/how-it-works-sft.md](docs/how-it-works-sft.md) for the method and caveats.
 
+`--detector rl` runs Self-Critique, which targets memorisation from **RL
+post-training** (RLVR/GRPO) — the phase where likelihood-based detectors fail. It
+is the right choice for an RL/reasoning-tuned instruct model:
+
+```bash
+benchleak --model my/model --benchmark gsm8k --detector rl
+```
+
+Here each sample is treated as a *problem to solve*: the detector generates a
+response, asks the model to redo it along a different reasoning path, and measures
+how similar the two answers' entropy curves stay (a contaminated problem can't
+deviate). Because it generates two responses per sample it is the slowest
+detector — use a small `--limit` and tune `--max-new-tokens`. It needs a model
+with a chat template. See [docs/how-it-works-rl.md](docs/how-it-works-rl.md).
+
 ## How it works
 
 The benchmark is scored against a **reference set** of text the model is not
@@ -117,13 +132,13 @@ cleanest signal, supply your own domain-matched reference data with
 `--reference my_reference.txt` (one passage per line).
 
 For the full reasoning (why a reference set is needed, the choice of test, and
-where the method can mislead), see [docs/how-it-works.md](docs/how-it-works.md).
+where the method can mislead), see [docs/how-it-works-pretrain.md](docs/how-it-works-pretrain.md).
 
 | Phase | Method | Status |
 |-------|--------|--------|
 | Pre-training | Min-K% probability (Shi et al. 2024) | ✅ implemented |
 | SFT | Probabilistic variation / SPV-MIA (Fu et al. 2024) | ✅ implemented |
-| RL post-training | Self-Critique entropy (Tao et al. 2025) | ⏳ planned |
+| RL post-training | Self-Critique entropy (Tao et al. 2025) | ✅ implemented |
 
 ## Caveats
 

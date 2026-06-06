@@ -2,7 +2,7 @@
 
 This document explains the fine-tuning (SFT) contamination detector. For the
 pre-training detector and the shared reference-set machinery, see
-[how-it-works.md](how-it-works.md).
+[how-it-works-pretrain.md](how-it-works-pretrain.md).
 
 ## The problem with probability as a signal
 

@@ -1,9 +1,11 @@
-# How benchleak works
+# How the pre-training detector works
 
-This document explains the reasoning behind the pre-training contamination
-detector: what it measures, why it needs a reference set, how the verdict is
-computed, and where the method can mislead. The SFT and RL detectors are not yet
-implemented and are not covered here.
+This document explains the pre-training contamination detector (Min-K% Prob) and
+the shared reference-set machinery all three detectors build on: what it measures,
+why it needs a reference set, how the verdict is computed, and where the method
+can mislead. For the other detectors, see
+[how-it-works-sft.md](how-it-works-sft.md) and
+[how-it-works-rl.md](how-it-works-rl.md).
 
 ## The problem
 
