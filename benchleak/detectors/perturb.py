@@ -12,7 +12,15 @@ cost of loading a second model.
 
 from __future__ import annotations
 
+import re
 import random
+
+_NUMERIC_RE = re.compile(r"\d")
+# Fractional / multiplicative words that fix a problem's answer.
+_NUMERIC_WORDS = frozenset({
+    "half", "halves", "twice", "double", "triple", "quadruple",
+    "quarter", "third", "fourth",
+})
 
 
 class WordSwapPerturber:
@@ -83,11 +91,37 @@ class T5MaskFillPerturber:
             if self.device is not None:
                 self._model.to(self.device)
 
+    def _protected_positions(self, words: list[str]) -> set[int]:
+        """Return indices of words whose meaning is fixed by their numeric value."""
+        protected = set()
+        for i, w in enumerate(words):
+            if _NUMERIC_RE.search(w) or w.strip(".,!?;:()$").lower() in _NUMERIC_WORDS:
+                protected.add(i)
+        return protected
+
+    def _numbers_preserved(self, original: str, candidate: str) -> bool:
+        """True if every digit sequence present in *original* also appears in *candidate*."""
+        return all(n in candidate for n in re.findall(r"\d+", original))
+
     def _mask(self, words: list[str]) -> tuple[str, int]:
         """Replace random spans with T5 sentinels, returning the masked text and span count."""
+        protected = self._protected_positions(words)
+        # A span starting at i covers words[i : i+span_length]; skip any start position
+        # where any token in that window is protected.
+        candidates = [
+            i for i in range(len(words))
+            if not any((i + k) in protected for k in range(self.span_length))
+        ]
+        if not candidates:
+            # Degenerate: every span would touch a protected token; mask singletons only.
+            candidates = [i for i in range(len(words)) if i not in protected]
+        if not candidates:
+            # Entire text is numeric; mask anything rather than returning unchanged.
+            candidates = list(range(len(words)))
+
         n_spans = max(1, int(len(words) * self.mask_fraction / self.span_length))
         masked = words[:]
-        starts = self._rng.sample(range(len(words)), min(n_spans, len(words)))
+        starts = self._rng.sample(candidates, min(n_spans, len(candidates)))
         # Splice spans from the back so earlier indices stay valid as we replace.
         for start in sorted(starts, reverse=True):
             end = min(start + self.span_length, len(masked))
@@ -138,5 +172,9 @@ class T5MaskFillPerturber:
                 out = self._model.generate(input_ids, max_new_tokens=self.max_new_tokens, do_sample=True)
             generated = self._tokenizer.decode(out[0], skip_special_tokens=False)
             fills = self._fills(generated, n_spans)
-            neighbours.append(self._apply(masked, fills) if fills else text)
+            if fills:
+                candidate = self._apply(masked, fills)
+                neighbours.append(candidate if self._numbers_preserved(text, candidate) else text)
+            else:
+                neighbours.append(text)
         return neighbours
