@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "benchleak"
-version = "0.3.1"
+dynamic = ["version"]
 description = "Detect benchmark contamination in large language models"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -39,6 +39,9 @@ Repository = "https://github.com/bouchnam/benchleak"
 
 [project.scripts]
 benchleak = "benchleak.cli:main"
+
+[tool.hatch.version]
+path = "benchleak/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["benchleak"]
