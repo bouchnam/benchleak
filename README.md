@@ -1,5 +1,9 @@
 # benchleak 🔍
 
+[![CI](https://github.com/bouchnam/benchleak/actions/workflows/ci.yml/badge.svg)](https://github.com/bouchnam/benchleak/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/benchleak)](https://pypi.org/project/benchleak/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 > **Did this model train on the test set? Find out in one command.**
 
 When a model scores 90% on GSM8K or MATH, was it genuinely capable or did it
@@ -50,19 +54,26 @@ Scoring runs one forward pass per sample. On a CPU-only machine the default
 `--device cuda` / `--device mps` to use a GPU.
 
 ```
-benchleak: pre-training contamination report
+benchleak: contamination report
 ====================================================
 Model:       Qwen/Qwen2.5-0.5B
 Benchmark:   gsm8k
 Detector:    min-k% prob
-Samples:     200 benchmark vs 200 reference
+Samples:     40 benchmark vs 40 reference
+Reference:   bundled reference-math.txt
 
-Separation (AUC):   0.71   [HIGH]
-Significance (p):   3.2e-08
+Separation (AUC):   0.580   [LOW]
+Significance (p):   0.11
 Flag thresholds:    AUC >= 0.6, p < 0.05
 
-Verdict: LIKELY CONTAMINATED
+Verdict: NO STRONG EVIDENCE
 ```
+
+The benchmark is compared against a reference set matched to its domain and
+format — for GSM8K, original math word problems written for this project. That
+matters: against a general-prose reference the same scan reports AUC 0.98 and
+flags the model, but that separation is almost entirely *math vs prose*, not
+*seen vs unseen*. A domain-matched reference isolates the memorisation signal.
 
 Known benchmarks (`gsm8k`, `math`, `arc-challenge`, `truthfulqa`) work by name. For
 any other Hub dataset, pass the path plus its text column(s):
@@ -127,8 +138,12 @@ from the reference's, reported as an AUC (`U / nm` from a Mann-Whitney test) wit
 a significance p-value. AUC ≈ 0.5 means the benchmark looks like fresh data; AUC
 well above 0.5 is the memorisation signature of contamination.
 
-A small reference set ships with the tool so it runs out of the box. For the
-cleanest signal, supply your own domain-matched reference data with
+Bundled reference sets ship with the tool so it runs out of the box, and the
+right one is picked by the benchmark's domain: math benchmarks (`gsm8k`, `math`)
+are compared against original GSM8K-style word problems written for this project
+(never published, so no model trained on them — and their arithmetic is
+machine-verified by the test suite); everything else uses a general-prose set.
+For the cleanest signal, supply your own domain-matched reference data with
 `--reference my_reference.txt` (one passage per line).
 
 For the full reasoning (why a reference set is needed, the choice of test, and
@@ -144,9 +159,10 @@ where the method can mislead), see [docs/how-it-works-pretrain.md](docs/how-it-w
 
 - A verdict needs **≥ 5 samples per side**; the significance test cannot reach
   p < 0.05 below that.
-- The bundled reference is general-domain prose. Comparing it against a
-  narrow-domain benchmark (e.g. math) can confound *domain* with *memorisation*;
-  prefer a domain-matched `--reference` for results you intend to publish.
+- Math benchmarks are automatically compared against the bundled math reference.
+  For any other narrow-domain benchmark the fallback is general-domain prose,
+  which can confound *domain* with *memorisation*; prefer a domain-matched
+  `--reference` for results you intend to publish.
 
 ## Troubleshooting
 

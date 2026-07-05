@@ -62,7 +62,7 @@ def main() -> int:
 
     print(f"→ loading benchmark {spec.path} / {spec.split} (limit {args.limit}) ...", flush=True)
     benchmark_texts = load_benchmark(spec, limit=args.limit)
-    reference_texts = load_reference(args.reference, limit=args.limit)
+    reference_texts = load_reference(args.reference, limit=args.limit, domain=spec.domain)
     print(f"  {len(benchmark_texts)} benchmark, {len(reference_texts)} reference texts", flush=True)
 
     detector = MinKProbDetector(model, tokenizer, k=args.k, max_length=args.max_length)
@@ -93,12 +93,14 @@ def main() -> int:
     print()
 
     print(format_report(result, model_id=args.model))
-    print(
-        "\nReminder: the bundled reference is general prose; a high AUC here partly "
-        "reflects domain (math vs prose), not only memorisation. Swap in "
-        "domain-matched --reference before trusting the verdict.",
-        file=sys.stderr,
-    )
+    if spec.domain == "general" and args.reference is None:
+        print(
+            "\nReminder: the bundled general reference is prose; against a "
+            "narrow-domain benchmark a high AUC partly reflects domain, not only "
+            "memorisation. Swap in a domain-matched --reference before trusting "
+            "the verdict.",
+            file=sys.stderr,
+        )
     return 0
 
 

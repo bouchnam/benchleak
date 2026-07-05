@@ -16,6 +16,7 @@ def test_resolve_known_benchmark_uses_registry_defaults():
     spec = resolve_spec("gsm8k")
     assert spec == BENCHMARKS["gsm8k"]
     assert spec.fields == ("question", "answer")
+    assert spec.domain == "math"
 
 
 def test_resolve_known_benchmark_overrides():
@@ -23,6 +24,12 @@ def test_resolve_known_benchmark_overrides():
     assert spec.split == "train"
     assert spec.fields == ("question",)
     assert spec.config == "main"  # untouched default preserved
+    assert spec.domain == "math"  # domain survives overrides
+
+
+def test_resolve_unknown_benchmark_defaults_to_general_domain():
+    spec = resolve_spec("some/private-dataset", fields=["text"])
+    assert spec.domain == "general"
 
 
 def test_resolve_unknown_benchmark_requires_fields():

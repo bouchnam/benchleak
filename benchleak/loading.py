@@ -18,18 +18,28 @@ from typing import Iterable, Sequence
 
 @dataclass(frozen=True)
 class BenchmarkSpec:
-    """Where a known benchmark lives and which fields carry its text."""
+    """Where a known benchmark lives, which fields carry its text, and its domain.
+
+    ``domain`` selects the bundled reference set to compare against when the
+    caller does not supply their own (see ``benchleak.data.load_reference``): a
+    domain-matched reference avoids confounding domain with memorisation.
+    """
 
     path: str
     fields: tuple[str, ...]
     config: str | None = None
     split: str = "test"
+    domain: str = "general"
 
 
 # Benchmarks the registry resolves without the caller spelling out every field.
 BENCHMARKS: dict[str, BenchmarkSpec] = {
-    "gsm8k": BenchmarkSpec("openai/gsm8k", ("question", "answer"), config="main", split="test"),
-    "math": BenchmarkSpec("hendrycks/competition_math", ("problem", "solution"), split="test"),
+    "gsm8k": BenchmarkSpec(
+        "openai/gsm8k", ("question", "answer"), config="main", split="test", domain="math"
+    ),
+    "math": BenchmarkSpec(
+        "hendrycks/competition_math", ("problem", "solution"), split="test", domain="math"
+    ),
     "arc-challenge": BenchmarkSpec(
         "allenai/ai2_arc", ("question",), config="ARC-Challenge", split="test"
     ),
@@ -72,6 +82,7 @@ def resolve_spec(
         fields=tuple(fields) if fields else base.fields,
         config=config if config is not None else base.config,
         split=split if split is not None else base.split,
+        domain=base.domain,
     )
 
 

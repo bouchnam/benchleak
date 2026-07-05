@@ -16,7 +16,7 @@ import sys
 
 from . import __version__
 from .core import scan
-from .data import load_reference
+from .data import BUNDLED_REFERENCES, load_reference
 from .detectors.perturb import T5MaskFillPerturber, WordSwapPerturber
 from .detectors.pretrain import DEFAULT_K, MinKProbDetector
 from .detectors.rl import DEFAULT_MAX_NEW_TOKENS, SelfCritiqueDetector
@@ -39,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", required=True, help="HuggingFace model id, e.g. Qwen/Qwen2.5-0.5B")
     parser.add_argument("--benchmark", required=True, help="benchmark name (gsm8k, math, ...), a Hub dataset path, or a local file (.txt/.jsonl/.json/.csv)")
     parser.add_argument("--detector", choices=("pretrain", "sft", "rl"), default="pretrain", help="which phase to test: pretrain (Min-K%% Prob), sft (probabilistic variation), or rl (self-critique). Default: pretrain")
-    parser.add_argument("--reference", help="path to a reference-text file (one passage per line); defaults to the bundled set")
+    parser.add_argument("--reference", help="path to a reference-text file (one passage per line); defaults to the bundled set matching the benchmark's domain")
     parser.add_argument("--field", action="append", dest="fields", help="benchmark text column(s); repeatable. Required for an unknown benchmark")
     parser.add_argument("--config", help="dataset config/subset name")
     parser.add_argument("--split", help="dataset split (default depends on the benchmark)")
@@ -102,7 +102,14 @@ def run(args: argparse.Namespace) -> int:
     else:
         print(f"Loading benchmark {spec.path} ({spec.split}) ...", file=sys.stderr)
         benchmark_texts = load_benchmark(spec, limit=args.limit)
-    reference_texts = load_reference(args.reference, limit=args.limit)
+
+    domain = spec.domain if spec is not None else "general"
+    if args.reference:
+        reference_label = args.reference
+    else:
+        reference_label = f"bundled {BUNDLED_REFERENCES.get(domain, BUNDLED_REFERENCES['general'])}"
+    reference_texts = load_reference(args.reference, limit=args.limit, domain=domain)
+    print(f"Reference set: {reference_label}", file=sys.stderr)
 
     detector = build_detector(args, model, tokenizer)
     print(f"Scoring {len(benchmark_texts)} benchmark + {len(reference_texts)} reference samples ...", file=sys.stderr)
@@ -114,7 +121,7 @@ def run(args: argparse.Namespace) -> int:
         benchmark_name=args.benchmark,
     )
 
-    print(format_report(result, model_id=args.model))
+    print(format_report(result, model_id=args.model, reference=reference_label))
     return 1 if result.contaminated else 0
 
 

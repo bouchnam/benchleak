@@ -88,24 +88,29 @@ threshold from labelled examples ("50 books known to be memorized"). So the need
 for a clean baseline is real and present in the paper; benchleak simply packages
 it as a per-benchmark comparison rather than a hand-tuned threshold.
 
-### The bundled reference and its limitation
+### The bundled references and their limitation
 
-A small default reference ships in `benchleak/data/reference.txt`: original prose
-passages written for this project, so no released model can have trained on them.
-This makes the tool run out of the box.
+Two default reference sets ship in `benchleak/data/`, both made of original
+passages written for this project (so no released model can have trained on
+them), and one is picked automatically by the benchmark's domain:
 
-The limitation: that default is general prose, while a benchmark like GSM8K is
-math. The separation then mixes two effects, only one of which we want:
+- `reference.txt` — general prose, the fallback for any benchmark.
+- `reference-math.txt` — GSM8K-style math word problems (question, worked
+  solution with `<<...>>` calculator annotations, `#### N` answer), used for
+  math benchmarks (`gsm8k`, `math`). Matching the domain *and format* matters:
+  comparing math against prose would mix two effects, only one of which we
+  want — (1) seen vs unseen (the contamination signal) and (2) math vs prose
+  (an accidental domain difference; math is inherently more predictable to an
+  LLM). The arithmetic in every annotation is machine-verified by the test
+  suite, since a wrong calculation would itself be a surprising token.
 
-1. seen vs unseen (the contamination signal)
-2. math vs prose (an accidental domain difference; math is inherently more
-   predictable to an LLM)
-
-For a result you intend to trust, supply your own reference with `--reference`:
-text in the **same domain** as the benchmark but **guaranteed unseen** (for
-example, math word problems published after the model's training cutoff). Then
-the only remaining difference between the two groups is whether the model saw
-them, which is exactly what the test should isolate.
+The limitation remains for benchmarks outside the bundled domains, and even a
+matched bundled set is small. For a result you intend to trust, supply your own
+reference with `--reference`: text in the **same domain and format** as the
+benchmark but **guaranteed unseen** (for example, math word problems published
+after the model's training cutoff). Then the only remaining difference between
+the two groups is whether the model saw them, which is exactly what the test
+should isolate.
 
 ## From scores to a verdict
 
@@ -155,18 +160,23 @@ defaults, not hard science, and can be adjusted.
 
 ## Summary of caveats
 
-- A high AUC against the bundled prose reference reflects domain as well as
-  memorisation. Use a domain-matched `--reference` before trusting a verdict.
+- A high AUC against a domain-mismatched reference reflects domain as well as
+  memorisation. Known math benchmarks get the bundled math reference
+  automatically; for anything else, use a domain-matched `--reference` before
+  trusting a verdict.
 - A verdict needs at least 5 samples per side.
 - The thresholds (AUC 0.6, p 0.05) are heuristics, not calibrated guarantees.
-- Only the pre-training phase is implemented. A clean pre-training result does
-  not rule out contamination introduced during SFT or RL.
+- Min-K% targets likelihood-trained (pre-training / SFT) memorisation. A clean
+  result does not rule out contamination introduced during RL post-training —
+  that is what `--detector rl` is for (see
+  [how-it-works-rl.md](how-it-works-rl.md)).
 
 ## References
 
 - Shi et al., 2024. *Detecting Pretraining Data from Large Language Models.*
   arXiv:2310.16789. The Min-K% Prob method and the WikiMIA benchmark.
 - Fu et al., 2024. *Membership Inference via Self-Prompt Calibration.* Basis for
-  the planned SFT detector.
+  the SFT detector (see [how-it-works-sft.md](how-it-works-sft.md)).
 - Tao et al., 2025. *Detecting Data Contamination from RL Post-training.*
-  arXiv:2510.09259. Basis for the planned RL detector.
+  arXiv:2510.09259. Basis for the RL detector (see
+  [how-it-works-rl.md](how-it-works-rl.md)).
