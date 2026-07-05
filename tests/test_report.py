@@ -30,3 +30,13 @@ def test_report_clean_verdict():
 def test_report_warns_on_small_samples():
     text = format_report(_result(0.9, 0.04, n=3))
     assert "fewer than 5 samples" in text
+
+
+def test_report_names_reference_set_when_given():
+    text = format_report(_result(0.8, 0.001), reference="bundled reference-math.txt")
+    assert "Reference:   bundled reference-math.txt" in text
+    assert "Reference:" not in format_report(_result(0.8, 0.001))
+
+
+def test_report_title_is_detector_agnostic():
+    assert "pre-training" not in format_report(_result(0.8, 0.001))

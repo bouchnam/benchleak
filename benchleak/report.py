@@ -20,17 +20,31 @@ def _severity(auc: float) -> str:
     return "LOW"
 
 
-def format_report(result: ContaminationResult, *, model_id: str | None = None) -> str:
-    """Render a single pre-training contamination result as plain text."""
+def format_report(
+    result: ContaminationResult,
+    *,
+    model_id: str | None = None,
+    reference: str | None = None,
+) -> str:
+    """Render a single contamination result as plain text.
+
+    ``reference`` names the reference set the benchmark was compared against
+    (e.g. a file path or a bundled-set label), so a shared report records what
+    the verdict was calibrated on.
+    """
     verdict = "LIKELY CONTAMINATED" if result.contaminated else "NO STRONG EVIDENCE"
 
     lines = [
-        "benchleak: pre-training contamination report",
+        "benchleak: contamination report",
         "=" * 52,
         f"Model:       {model_id or 'n/a'}",
         f"Benchmark:   {result.benchmark}",
         f"Detector:    {result.detector}",
         f"Samples:     {result.n_benchmark} benchmark vs {result.n_reference} reference",
+    ]
+    if reference:
+        lines.append(f"Reference:   {reference}")
+    lines += [
         "",
         f"Separation (AUC):   {result.auc:.3f}   [{_severity(result.auc)}]",
         f"Significance (p):   {result.p_value:.3g}",
